@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      padding: 20px;
+    }
+
+    .edit-btn {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>To-Do List</h1>
+    <hr>
+
+    <!-- Task Creation Form -->
+    <form id="createTaskForm">
+      <div class="form-group">
+        <label for="taskName">Task Name:</label>
+        <input type="text" class="form-control" id="taskName" required>
+      </div>
+      <div class="form-group">
+        <label for="taskImage">Task Image:</label>
+        <input type="text" class="form-control" id="taskImage">
+      </div>
+      <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+    <br>
+
+    <!-- Task List -->
+    <div class="form-group">
+      <label for="searchTasks">Search Tasks:</label>
+      <input type="text" class="form-control" id="searchTasks">
+    </div>
+    <ul id="taskList" class="list-group">
+    </ul>
+  </div>
+
+  <script>
+    // Task List Array
+    let tasks = [];
+
+    // Function to create a new task
+    function createTask(taskName, taskImage) {
+      const task = {
+        id: Date.now(),
+        name: taskName,
+        image: taskImage,
+        completed: false,
+        dueDate: null
+      };
+
+      tasks.push(task);
+    }
+
+    // Function to delete a task
+    function deleteTask(taskId) {
+      tasks = tasks.filter(task => task.id !== taskId);
+    }
+
+    // Function to edit a task
+    function editTask(taskId, newTaskName) {
+      tasks.forEach(task => {
+        if (task.id === taskId) {
+          task.name = newTaskName;
+        }
+      });
+    }
+
+    // Function to toggle task completion
+    function toggleTaskCompletion(taskId) {
+      tasks.forEach(task => {
+        if (task.id === taskId) {
+          task.completed = !task.completed;
+        }
+      });
+    }
+
+    // Function to render the task list
+    function renderTaskList() {
+      const taskListElement = document.getElementById('taskList');
+      const searchInput = document.getElementById('searchTasks');
+      const searchTerm = searchInput.value.trim().toLowerCase();
+
+      taskListElement.innerHTML = '';
+
+      tasks
+        .filter(task => task.name.toLowerCase().includes(searchTerm))
+        .sort((a, b) => {
+          if (a.dueDate && b.dueDate) {
+            return a.dueDate - b.dueDate;
+          } else if (!a.dueDate && b.dueDate) {
+            return 1;
+          } else if (a.dueDate && !b.dueDate) {
+            return -1;
+          } else {
+            return 0;
+          }
+        })
+        .forEach(task => {
+          const listItem = document.createElement('li');
+          listItem.className = 'list-group-item';
+          listItem.innerHTML = `
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="checkbox_${task.id}" ${task.completed ? 'checked' : ''}>
+              <label class="custom-control-label ${task.completed ? 'completed' : ''}" for="checkbox_${task.id}">${task.name}</label>
+            </div>
+            ${task.image ? `<img src="${task.image}" alt="Task Image" class="task-image">` : ''}
+            <button class="btn btn-sm btn-primary float-right edit-btn">Edit</button>
+            <button class="btn btn-sm btn-danger float-right delete-btn">Delete</button>
+          `;
+
+          const deleteButton = listItem.querySelector('.delete-btn');
+          deleteButton.addEventListener('click', () => {
+            deleteTask(task.id);
+            renderTaskList();
+          });
+
+          const editButton = listItem.querySelector('.edit-btn');
+          editButton.addEventListener('click', () => {
+            const newTaskName = prompt('Enter the new task name:', task.name);
+            if (newTaskName !== null && newTaskName.trim() !== '') {
+              editTask(task.id, newTaskName.trim());
+              renderTaskList();
+            }
+          });
+
+          const checkbox = listItem.querySelector(`#checkbox_${task.id}`);
+checkbox.addEventListener('change', () => {
+            toggleTaskCompletion(task.id);
+            renderTaskList();
+          });
+
+          taskListElement.appendChild(listItem);
+        });
+    }
+
+    // Event listener for the task creation form
+    const createTaskForm = document.getElementById('createTaskForm');
+    createTaskForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const taskNameInput = document.getElementById('taskName');
+      const taskImageInput = document.getElementById('taskImage');
+
+      const taskName = taskNameInput.value.trim();
+      const taskImage = taskImageInput.value.trim();
+
+      if (taskName !== '') {
+        createTask(taskName, taskImage);
+        taskNameInput.value = '';
+        taskImageInput.value = '';
+        renderTaskList();
+      }
+    });
+
+    // Event listener for the search input
+    const searchInput = document.getElementById('searchTasks');
+    searchInput.addEventListener('input', () => {
+      renderTaskList();
+    });
+
+    // Initial rendering of the task list
+    renderTaskList();
+  </script>
+</body>
+
+</html>
